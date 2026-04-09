@@ -30,3 +30,6 @@ Ouvrir http://localhost:5173
 Les instructions détaillées sont dans les commentaires de chaque fichier.
 
 **Ne pas modifier** les fichiers dans `server/`, `src/services/`, `src/types/`, `src/components/MovieCard.tsx`, `src/App.tsx`, `src/main.tsx`.
+
+
+Ciorba Antonio 3AL1
