@@ -1,6 +1,6 @@
 import { useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
+// import { api } from "../services/api";
 import type { Movie } from "../types/movie";
 
 // =============================================================
@@ -37,5 +37,78 @@ import type { Movie } from "../types/movie";
 //
 
 export const MovieDetailPage = () => {
-  return <div>TODO : compléter cette page</div>;
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+
+  const { data: movie, error, isPending } = useQuery<Movie>({
+    queryKey: ["movie", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await fetch(`/api/movies/${id}`);
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Failed to fetch movie");
+      }
+
+      return res.json();
+    },
+  });
+
+  const toggleWatchedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/movies/${id}/toggle-watched`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? "Failed to toggle watched");
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["movie", id] });
+    },
+  });
+
+  if (isPending) return <p>Loading movie...</p>;
+
+  if (error instanceof Error) {
+    return (
+        <div>
+          <h1>Error</h1>
+          <p>{error.message}</p>
+        </div>
+    );
+  }
+
+  if (!movie) return <p>Movie not found.</p>;
+
+  return (
+      <div className="max-w-2xl mx-auto">
+        <img
+            src={movie.imageUrl}
+            alt={movie.title}
+            className="w-full h-64 object-cover rounded-lg"
+        />
+
+        <h1 className="text-3xl font-bold mt-4">{movie.title}</h1>
+        <p className="text-gray-600 mt-1">
+          {movie.director} • {movie.year} • {movie.genre}
+        </p>
+
+        <p className="text-gray-700 mt-4">{movie.description}</p>
+
+        <button
+            onClick={() => toggleWatchedMutation.mutate()}
+            className={`mt-4 px-4 py-2 rounded-lg text-white ${
+                movie.watched ? "bg-gray-500" : "bg-green-600"
+            }`}
+        >
+          {movie.watched ? "Mark as not watched" : "Mark as watched"}
+        </button>
+      </div>
+  );
 };

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../services/api";
+// import { api } from "../services/api";
 import type { Movie } from "../types/movie";
 import { MovieCard } from "../components/MovieCard";
 import { SearchBar } from "../components/SearchBar";
@@ -33,14 +33,43 @@ export const CataloguePage = () => {
   const [search, setSearch] = useState("");
   const [genre, setGenre] = useState("");
 
-  // TODO : écrire le useQuery ici
+    const { data: movies, error, isPending } = useQuery<Movie[]>({
+        queryKey: ["movies", search, genre],
+        queryFn: async () => {
+            const res = await fetch(
+                `/api/movies?search=${encodeURIComponent(search)}&genre=${encodeURIComponent(genre)}`
+            );
+
+            if (!res.ok) {
+                const body = await res.json().catch(() => null);
+                throw new Error(body?.error ?? "Failed to fetch movies");
+            }
+
+            return res.json();
+        },
+    });
+
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Catalogue</h1>
       <SearchBar onSearch={setSearch} onGenreChange={setGenre} />
 
-      {/* TODO : afficher loading, error, et la liste de films */}
+        {isPending ? (
+            <p>Loading Movies...</p>
+        ) : error instanceof Error ? (
+            <div>
+                <h1>Error</h1>
+                <p>{error.message}</p>
+            </div>
+        ) : (
+            <>
+                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">                       {(movies ?? []).map((movie: Movie, idx: number) => (
+                        <MovieCard key={idx} movie={movie} />
+                    ))}
+                </ul>
+            </>
+        )}
     </div>
   );
 };
